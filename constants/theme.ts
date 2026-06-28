@@ -26,7 +26,7 @@ export const Fonts = {
 };
 
 export const FontSizes = {
-  title: 56,
+  title: 64,
   heading: 40,
   body: 14,
   small: 12,
