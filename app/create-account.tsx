@@ -1,46 +1,157 @@
 import { Colors, Fonts, FontSizes } from "@/constants/theme";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { useState } from "react";
+import {
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableWithoutFeedback,
+    View,
+} from "react-native";
 
 export default function Login() {
-  return (
-    <LinearGradient
-      style={styles.container}
-      colors={[Colors.gradientCream, Colors.gradientGreen, Colors.gradientBlue]}
-    >
-    <Pressable style={styles.backButton} onPress={() => router.back()}>
-        <Text style={styles.backArrow}>‹</Text>
-    </Pressable>
-      <Text style={styles.title}>Create Your Account</Text>
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmedPassword, setConfirmedPassword] = useState("");
+    const [usernameError, setUsernameError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+    const [confirmedError, setConfirmedError] = useState("");
 
-        <Text style={styles.label}>Create your username</Text>
-        <TextInput style={styles.input} />
+    function handleContinue() {
+        if (username.trim() === "") {
+            setUsernameError("Please enter a username.");
+            return;
+        }
 
-        <View style={styles.fieldGap} />
+        if (username.trim().toLowerCase() === "riley") {
+            setUsernameError("That username is already taken.");
+            return;
+        }
 
-        <Text style={styles.label}>Create your password</Text>
-        <TextInput style={styles.input} secureTextEntry />
-        
-        <View style={styles.fieldGap} />
+        if (password === "") {
+            setPasswordError("Please enter a password.");
+            return;
+        }
 
-        <Text style={styles.label}>Confirm password</Text>
-        <TextInput style={styles.input} secureTextEntry />
+        if (confirmedPassword === "") {
+            setConfirmedError("Please confirm your password.");
+            return;
+        }
 
-        <Pressable style={styles.loginButton} onPress={() => router.push("/details")}>
-            <Text style={styles.loginButtonText}>Next</Text>
-        </Pressable>
+        if (password !== confirmedPassword){
+            setConfirmedError("Passwords do not match");
+            return;
+        }
 
-    </LinearGradient>
+        // ADD REQUIRMENTS FOR PASSWORD TO HAVE NUMBERS, CHARS, ETC.
+        // if (password.trim() == "password"){
+        //   setError("Password is incorrect.")
+        //   return;
+        // }
+
+        router.push("/details");
+    }
+
+    return (
+        <LinearGradient
+        style={styles.container}
+        colors={[Colors.gradientCream, Colors.gradientGreen, Colors.gradientBlue]}
+        >
+            <KeyboardAvoidingView
+                style={styles.keyboardView}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
+                    >
+                <Pressable style={styles.backButton} onPress={() => router.back()}>
+                    <Text style={styles.backArrow}>‹</Text>
+                </Pressable>
+                <Text style={styles.title}>Create Your Account</Text>
+
+                <Text style={styles.label}>Create your username</Text>
+                <TextInput 
+                    style={styles.input}
+                    value={username} 
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="default"
+                    textContentType="username"
+                    onChangeText={(text) => {
+                        setUsername(text);
+                        if (text.trim().toLowerCase() === "riley") { // CONNECT TO DB EVENTUALLY
+                            setUsernameError("That username is already taken.");
+                        } else {
+                            setUsernameError("");
+                        }
+                    }}
+                />
+                {usernameError ? <Text style={styles.errorText}>{usernameError}</Text> : null}
+
+                <View style={styles.fieldGap} />
+
+                <Text style={styles.label}>Create your password</Text>
+                <TextInput 
+                    style={styles.input} 
+                    value={password} 
+                    onChangeText={(text)=>{
+                        setPassword(text); 
+                        setPasswordError("");
+                    }}
+                    secureTextEntry 
+                />
+                {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+
+                <View style={styles.fieldGap} />
+
+                <Text style={styles.label}>Confirm password</Text>
+                <TextInput 
+                    style={styles.input} 
+                    value={confirmedPassword} 
+                    onChangeText={(text)=>{
+                        setConfirmedPassword(text); 
+                        setConfirmedError("");
+                    }}
+                    secureTextEntry 
+                />
+                {confirmedError ? <Text style={styles.errorText}>{confirmedError}</Text> : null}
+
+                <Pressable style={styles.loginButton} onPress={handleContinue}>
+                    <Text style={styles.loginButtonText}>Next</Text>
+                </Pressable>
+
+                    </ScrollView>
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
+        </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 32,
-    justifyContent: "center",
-  },
+container: {
+  flex: 1,
+},
+
+keyboardView: {
+  flex: 1,
+},
+
+scrollContent: {
+  flexGrow: 1,
+  paddingHorizontal: 32,
+  justifyContent: "center",
+  paddingTop: 80,
+  paddingBottom: 40,
+},
 
   title: {
     fontSize: FontSizes.title,
@@ -112,4 +223,10 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
 
+  errorText: {
+    color: "red",
+    fontSize: FontSizes.body,
+    fontFamily: Fonts.interRegular,
+    marginTop: 8
+  }
 });

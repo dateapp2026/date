@@ -2,9 +2,40 @@
 import { Colors, Fonts, FontSizes } from "@/constants/theme";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 export default function Login() {
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [usernameError, setUsernameError] = useState("");
+    const [passwordError, setPasswordError] = useState("");
+
+
+    function handleContinue() {
+        if (username.trim() === "") {
+            setUsernameError("Please enter a username.");
+            return;
+        }
+
+        if (username.trim().toLowerCase() !== "riley") {
+            setUsernameError("That username does not exist.");
+            return;
+        }
+
+        if (password === "") {
+            setPasswordError("Please enter a password.");
+            return;
+        }
+
+        if (password !== "password"){
+            setPasswordError("Password is incorrect.");
+            return;
+        }
+
+        router.push("/home");
+    }
+
   return (
     <LinearGradient
       style={styles.container}
@@ -16,16 +47,31 @@ export default function Login() {
       <Text style={styles.title}>Welcome Back</Text>
 
         <Text style={styles.label}>Username</Text>
-        <TextInput style={styles.input} />
+        <TextInput 
+            style={styles.input}
+            value={username}
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="default"
+            textContentType="username"
+            onChangeText={(text)=>{setUsername(text); setUsernameError("");}} 
+        />
+        {usernameError ? <Text style={styles.errorText}>{usernameError}</Text> : null}
 
         <View style={styles.fieldGap} />
 
         <Text style={styles.label}>Password</Text>
-        <TextInput style={styles.input} secureTextEntry />
+        <TextInput 
+            style={styles.input} 
+            value={password} 
+            onChangeText={(text)=>{setPassword(text); setPasswordError("");}} 
+            secureTextEntry
+        />
+        {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
         <Text style={styles.forgot}>Forgot password?</Text>
 
-        <Pressable style={styles.loginButton} onPress={() => router.push("/home")}>
+        <Pressable style={styles.loginButton} onPress={handleContinue}>
             <Text style={styles.loginButtonText}>Log in</Text>
         </Pressable>
 
@@ -92,7 +138,7 @@ const styles = StyleSheet.create({
     color: Colors.black,
     lineHeight: 42
   },
-  
+
   loginButton: {
     backgroundColor: Colors.black,
     height: 44,
@@ -109,5 +155,12 @@ const styles = StyleSheet.create({
     fontFamily: Fonts.instrumentSerifRegular,
     fontSize: 24,
   },
+
+  errorText: {
+    color: "red",
+    fontSize: FontSizes.body,
+    fontFamily: Fonts.interRegular,
+    marginTop: 8
+  }
 
 });
