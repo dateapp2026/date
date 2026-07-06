@@ -1,0 +1,40 @@
+package models
+
+import "time"
+
+type User struct {
+	ID                       string    `json:"id"`
+	Email                    string    `json:"email"`
+	Username                 string    `json:"username"`
+	PasswordHash             string    `json:"-"`
+	FirstName                string    `json:"first_name"`
+	LastName                 string    `json:"last_name"`
+	Birthday                 time.Time `json:"birthday"`
+	Gender                   string    `json:"gender"`
+	ProfilePictureURL        *string   `json:"profile_picture_url"`
+	EmailVerified            bool      `json:"email_verified"`
+	EmailVerificationToken   *string   `json:"-"`
+	EmailVerificationExpires *time.Time `json:"-"`
+	CreatedAt                time.Time `json:"created_at"`
+	UpdatedAt                time.Time `json:"updated_at"`
+}
+
+type RegisterRequest struct {
+	Email     string `json:"email" binding:"required,email"`
+	Username  string `json:"username" binding:"required,min=3,max=30"`
+	Password  string `json:"password" binding:"required,min=8"`
+	FirstName string `json:"first_name" binding:"required"`
+	LastName  string `json:"last_name" binding:"required"`
+	Birthday  string `json:"birthday" binding:"required"`
+	Gender    string `json:"gender" binding:"required"`
+}
+
+type LoginRequest struct {
+	Email    string `json:"email" binding:"required,email"`
+	Password string `json:"password" binding:"required"`
+}
+
+type AuthResponse struct {
+	Token string `json:"token"`
+	User  User   `json:"user"`
+}
