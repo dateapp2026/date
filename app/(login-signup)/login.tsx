@@ -18,7 +18,7 @@ export default function Login() {
             return;
         }
 
-        if (username.trim().toLowerCase() !== "riley") {
+        if (username.trim().toLowerCase() !== "riley") { // CONNECT TO DB EVENTUALLY
             setUsernameError("That username does not exist.");
             return;
         }
@@ -28,12 +28,12 @@ export default function Login() {
             return;
         }
 
-        if (password !== "password"){
+        if (password !== "password"){ // CONNECT TO DB EVENTUALLY
             setPasswordError("Password is incorrect.");
             return;
         }
 
-        router.push("/home");
+        router.push("/(main-screens)/home");
     }
 
   return (

@@ -19,6 +19,7 @@ export default function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [confirmedPassword, setConfirmedPassword] = useState("");
+
     const [usernameError, setUsernameError] = useState("");
     const [passwordError, setPasswordError] = useState("");
     const [confirmedError, setConfirmedError] = useState("");
@@ -49,13 +50,21 @@ export default function Login() {
             return;
         }
 
-        // ADD REQUIRMENTS FOR PASSWORD TO HAVE NUMBERS, CHARS, ETC.
-        // if (password.trim() == "password"){
-        //   setError("Password is incorrect.")
-        //   return;
-        // }
+        router.push("/(login-signup)/details");
+    }
 
-        router.push("/details");
+    function validatePassword(password: string) {
+        if (password.length < 8 ||
+            !/[0-9]/.test(password) ||
+            !/[!@#$%^&*(),.?":{}|<>_\-+=/\\[\]`~;]/.test(password) ||
+            !/[A-Z]/.test(password) ||
+            !/[a-z]/.test(password)
+            )    
+        {
+            return "Password must be at least 8 characters long and include a number, a symbol, an upper case and a lower case letter.";
+        }
+
+        return "";
     }
 
     return (
@@ -105,7 +114,7 @@ export default function Login() {
                     value={password} 
                     onChangeText={(text)=>{
                         setPassword(text); 
-                        setPasswordError("");
+                        setPasswordError(validatePassword(text));
                     }}
                     secureTextEntry 
                 />

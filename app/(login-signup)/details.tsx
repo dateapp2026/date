@@ -1,4 +1,5 @@
 import { Colors, Fonts, FontSizes } from "@/constants/theme";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -60,7 +61,7 @@ export default function Login() {
         }
 
         setFormError("");
-        router.push("/home");
+        router.push("/(main-screens)/home");
     }
 
     function formatDateOfBirth(text: string) {
@@ -201,7 +202,11 @@ export default function Login() {
                         <Text style={styles.dropdownText}>
                             {gender ? gender : "Select gender"}
                         </Text>
-                        <Text style={styles.dropdownArrow}>⌄</Text>
+                        <Ionicons
+                            name={genderOpen ? "chevron-up" : "chevron-down"}
+                            size={22}
+                            color={Colors.black}
+                        />
                         </Pressable>
                         {genderOpen ? (
                         <View style={[styles.dropdownMenu]}>
