@@ -29,8 +29,6 @@ export default function Login() {
     const [mobileNumber, setMobileNumber] = useState("");
     const [mobileNumberError, setMobileNumberError] = useState("");
 
-    const [email, setEmail] = useState("");
-
     const [submitted, setSubmitted] = useState(false);
     const [formError, setFormError] = useState("");
 
@@ -42,8 +40,7 @@ export default function Login() {
             lastName.trim() === "" ||
             gender === "" ||
             dateOfBirth.trim() === "" ||
-            mobileNumber.trim() === "" ||
-            email.trim() === "";
+            mobileNumber.trim() === "";
 
         if(missingFieldRequired){
             setFormError("Please fill out all fields.");
@@ -61,7 +58,7 @@ export default function Login() {
         }
 
         setFormError("");
-        router.push("/(main-screens)/home");
+        router.push("/(login-signup)/verify-mobile");
     }
 
     function formatDateOfBirth(text: string) {
@@ -80,21 +77,46 @@ export default function Login() {
         }
     }
 
-    function formatNumber(text: string){
+function formatNumber(text: string) {
+    let cleaned = text.replace(/[^\d+]/g, "");
 
-        const numbersOnly = text.replace(/\D/g, "");
-        const limited = numbersOnly.slice(0, 10);
+    if (!cleaned.startsWith("+")) {
+        cleaned = `+${cleaned}`;
+    }
 
-        if (limited.length <= 3) {
-            setMobileNumber(limited);
-        } else if (limited.length <= 6) {
-            setMobileNumber(`${limited.slice(0, 3)}-${limited.slice(3)}`);
+    const digitsOnly = cleaned.replace(/\D/g, "");
+
+    let countryCode = "";
+    let localNumber = "";
+
+    if (digitsOnly.startsWith("33")) {
+        countryCode = "+33";
+        localNumber = digitsOnly.slice(2, 11);
+    } else if (digitsOnly.startsWith("1")) {
+        countryCode = "+1";
+        localNumber = digitsOnly.slice(1, 11);
+    } else {
+        countryCode = "+";
+        localNumber = digitsOnly.slice(0, 10);
+    }
+
+    if (countryCode === "+1") {
+        if (localNumber.length <= 3) {
+            setMobileNumber(`${countryCode} ${localNumber}`);
+        } else if (localNumber.length <= 6) {
+            setMobileNumber(`${countryCode} ${localNumber.slice(0, 3)}-${localNumber.slice(3)}`);
         } else {
             setMobileNumber(
-            `${limited.slice(0, 3)}-${limited.slice(3, 6)}-${limited.slice(6)}`
+            `${countryCode} ${localNumber.slice(0, 3)}-${localNumber.slice(3, 6)}-${localNumber.slice(6)}`
             );
         }
+    } else if (countryCode === "+33") {
+        const groups = localNumber.match(/.{1,2}/g)?.join(" ") || "";
+        setMobileNumber(`${countryCode} ${groups}`);
+    } else {
+        setMobileNumber(`${countryCode}${localNumber}`);
     }
+}
 
     function isValidDateOfBirth(dob: string) {
         const numbersOnly = dob.replace(/\D/g, "");
@@ -134,15 +156,18 @@ export default function Login() {
         return age >= 18;
     }
 
-    function isValidMobileNumber(num: string) {
-        const numbersOnly = num.replace(/\D/g, "");
+function isValidMobileNumber(num: string) {
+    const numbersOnly = num.replace(/\D/g, "");
 
-        if(numbersOnly.length !== 10){
-            return false;
-        }
-
+    //us number
+    if (numbersOnly.startsWith("1") && numbersOnly.length === 11) {
         return true;
     }
+
+    // ADD INTERNATIONAL NUMBERS LATER (?)
+
+    return false;
+}
 
 
     return (
@@ -199,7 +224,12 @@ export default function Login() {
                             ]}
                             onPress={() => setGenderOpen(!genderOpen)}
                         >
-                        <Text style={styles.dropdownText}>
+                        <Text
+                            style={[
+                                styles.dropdownText,
+                                gender === "" ? styles.placeholderText : null,
+                            ]}
+                        >
                             {gender ? gender : "Select gender"}
                         </Text>
                         <Ionicons
@@ -277,30 +307,19 @@ export default function Login() {
                                     setMobileNumberError("Invalid mobile number");
                                 }
                             }}
-                            placeholder="XXX-XXX-XXXX"
+                            placeholder="+1 XXX-XXX-XXXX"
                             placeholderTextColor="#777"
                             keyboardType="phone-pad"
-                            maxLength={12}
+                            maxLength={17}
                         />
                         {mobileNumberError ? (<Text style={styles.errorText}>{mobileNumberError}</Text>) : null}
 
-
                         <View style={styles.fieldGap} />
-
-                        <Text style={styles.label}>Email</Text>
-                        <TextInput 
-                            style={[
-                                styles.input,
-                                submitted && email.trim() === "" ? styles.inputError : null,
-                            ]}
-                            onChangeText={setEmail}
-                            returnKeyType="done"
-                        />
 
                         {formError ? <Text style={styles.formErrorText}>{formError}</Text> : null}
 
                         <Pressable style={styles.loginButton} onPress={handleCreateAccount}>
-                            <Text style={styles.loginButtonText}>Create Account</Text>
+                            <Text style={styles.loginButtonText}>Next</Text>
                         </Pressable>
                     </ScrollView>
                 </TouchableWithoutFeedback>
@@ -411,7 +430,9 @@ dropdownText: {
   fontSize: FontSizes.body,
   color: Colors.black,
 },
-
+placeholderText: {
+  color: "#777",
+},
 dropdownArrow: {
   fontSize: 20,
   color: Colors.black,

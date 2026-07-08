@@ -1,44 +1,50 @@
 import { Colors, Fonts, FontSizes } from "@/constants/theme";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import { Pressable, ScrollView, StatusBar, StyleSheet, Text } from "react-native";
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, StyleSheet, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Home() {
-  return (
-    <SafeAreaProvider>
-        <LinearGradient style={styles.gradient} colors={[Colors.gradientCream, Colors.gradientGreen, Colors.gradientBlue]}>
-            <SafeAreaView style={styles.container} edges={['top']}>
-                <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+    return (
+    <LinearGradient
+        style={styles.gradient}
+        colors={[
+        Colors.gradientCream,
+        Colors.gradientGreen,
+        Colors.gradientBlue,
+        ]}
+    >
+        <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
 
-                    <Pressable style={styles.backButton} onPress={() => router.back()}>
-                        <Text style={styles.backArrow}>‹</Text>
-                    </Pressable>
-                    
-                    <Text style={styles.paragraph}> Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-                        eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
-                        minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-                        aliquip ex ea commodo consequat. Duis aute irure dolor in
-                        reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
-                        pariatur. Excepteur sint occaecat cupidatat non proident, sunt in 
-                        culpa qui officia deserunt mollit anim id est laborum. 
-                    </Text>
-                </ScrollView>
-            </SafeAreaView>
-        </LinearGradient>
-    </SafeAreaProvider>
+                <Text style={styles.title}>Date App</Text>
+
+                <Text style={styles.paragraph}>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+                eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
+                ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
+                aliquip ex ea commodo consequat. Duis aute irure dolor in
+                reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla
+                pariatur. Excepteur sint occaecat cupidatat non proident, sunt in
+                culpa qui officia deserunt mollit anim id est laborum.
+                </Text>
+                
+            </ScrollView>
+        </SafeAreaView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
 
   container: {
     flex: 1,
-    paddingTop: StatusBar.currentHeight,
-  },
-
-  gradient: {
-    flex: 1
   },
 
   scrollView: {
@@ -48,6 +54,15 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: 12,
+    paddingBottom: 130,
+  },
+
+  title: {
+    fontSize: FontSizes.heading,
+    color: Colors.black,
+    fontFamily: Fonts.instrumentSerifRegular,
+    textAlign: "center",
+    marginTop: 24,
   },
 
   paragraph: {
@@ -59,7 +74,6 @@ const styles = StyleSheet.create({
     lineHeight: 40,
   },
 
-
   backButton: {
     position: "absolute",
     top: 60,
@@ -67,13 +81,13 @@ const styles = StyleSheet.create({
     width: 64,
     height: 36,
     justifyContent: "center",
-    alignItems: "center",   
-  },
-  
-  backArrow:{
-    fontSize: 36,
-    color: Colors.black,
-    lineHeight: 42
+    alignItems: "center",
+    zIndex: 10,
   },
 
+  backArrow: {
+    fontSize: 36,
+    color: Colors.black,
+    lineHeight: 42,
+  },
 });

@@ -20,6 +20,7 @@ export default function Index() {
     const [selectedUniversity, setSelectedUniversity] = useState("");
     const [showUniversityDropdown, setShowUniversityDropdown] = useState(false);
     const [email, setEmail] = useState("");
+    const [showVerifyButton, setShowVerifyButton] = useState(false);
     
     function handleSelectUniversity(university: string) {
         setSelectedUniversity(university);
@@ -83,11 +84,21 @@ export default function Index() {
                                     style={styles.input}
                                     placeholder=""
                                     value={email}
-                                    onChangeText={setEmail}
+                                    onChangeText={(text) => {setEmail(text); setShowVerifyButton(false);}}
                                     returnKeyType="done"
                                     autoCapitalize="none"
                                     keyboardType="email-address"
-                                    //onSubmitEditing={() => router.push("/(login-signup)/create-account")}
+                                    onSubmitEditing={() => {
+                                        if (email.trim()) {
+                                            setShowVerifyButton(true);
+                                            Keyboard.dismiss();
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        if (email.trim()) {
+                                            setShowVerifyButton(true);
+                                        }
+                                    }}
                                 />
 
                                 <View style={styles.loginRow}>
@@ -102,7 +113,7 @@ export default function Index() {
 
                         <View style={styles.fieldGap} />
 
-                        {email.trim() ? (
+                        {showVerifyButton ? (
                             <>
                                 <View style={styles.fieldGap} />
 
@@ -110,7 +121,7 @@ export default function Index() {
                                     style={styles.loginButton}
                                     onPress={() => router.push("/(login-signup)/verify-uni-email")}
                                 >
-                                    <Text style={styles.loginButtonText}>Go to verification</Text>
+                                    <Text style={styles.loginButtonText}>Next</Text>
                                 </Pressable>
                             </>
                         ) : null}
