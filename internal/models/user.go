@@ -12,6 +12,7 @@ type User struct {
 	Birthday                 time.Time `json:"birthday"`
 	Gender                   string    `json:"gender"`
 	ProfilePictureURL        *string   `json:"profile_picture_url"`
+	Bio                      *string   `json:"bio"`
 	EmailVerified            bool      `json:"email_verified"`
 	EmailVerificationToken   *string   `json:"-"`
 	EmailVerificationExpires *time.Time `json:"-"`
@@ -37,4 +38,16 @@ type LoginRequest struct {
 type AuthResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`
+}
+
+type Photo struct {
+	ID        string    `json:"id"`
+	UserID    string    `json:"-"`
+	URL       string    `json:"url"`
+	Position  int       `json:"position"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type UpdateBioRequest struct {
+	Bio string `json:"bio" binding:"max=500"`
 }
