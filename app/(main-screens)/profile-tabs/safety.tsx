@@ -1,0 +1,52 @@
+import { Colors, Fonts, FontSizes } from "@/constants/theme";
+import { LinearGradient } from "expo-linear-gradient";
+import { ScrollView, StyleSheet, Text } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+export default function Safety() {
+    return (
+    <LinearGradient
+        style={styles.gradient}
+        colors={[Colors.gradientCream, Colors.gradientGreen, Colors.gradientBlue]}
+    >
+        <SafeAreaView style={styles.container} edges={["top", "bottom"]}>
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+            >
+
+                <Text style={styles.title}>Safety</Text>
+            </ScrollView>
+        </SafeAreaView>
+    </LinearGradient>
+    );
+}
+
+const styles = StyleSheet.create({
+  gradient: {
+    flex: 1,
+  },
+
+  container: {
+    flex: 1,
+  },
+
+  scrollView: {
+    flex: 1,
+  },
+
+  scrollContent: {
+    flexGrow: 1,
+    padding: 12,
+    paddingBottom: 130,
+  },
+
+  title: {
+    fontSize: FontSizes.heading,
+    color: Colors.black,
+    fontFamily: Fonts.instrumentSerifRegular,
+    textAlign: "center",
+    marginTop: 24,
+  },
+});
