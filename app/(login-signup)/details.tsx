@@ -1,4 +1,6 @@
 import { Colors, Fonts, FontSizes } from "@/constants/theme";
+import { useSignup } from "@/contexts/SignupContext";
+import { ApiError, login, register } from "@/lib/auth";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -17,6 +19,7 @@ import {
 } from "react-native";
 
 export default function Login() {
+    const { email, username, password, reset } = useSignup();
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
 
@@ -31,8 +34,17 @@ export default function Login() {
 
     const [submitted, setSubmitted] = useState(false);
     const [formError, setFormError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
-    function handleCreateAccount(){
+    function toIsoDate(mmddyyyy: string) {
+        const numbersOnly = mmddyyyy.replace(/\D/g, "");
+        const month = numbersOnly.slice(0, 2);
+        const day = numbersOnly.slice(2, 4);
+        const year = numbersOnly.slice(4, 8);
+        return `${year}-${month}-${day}`;
+    }
+
+    async function handleCreateAccount(){
         setSubmitted(true);
 
         const missingFieldRequired =
@@ -58,7 +70,30 @@ export default function Login() {
         }
 
         setFormError("");
-        router.push("/(login-signup)/verify-mobile");
+        setSubmitting(true);
+
+        try {
+            await register({
+                email,
+                username,
+                password,
+                first_name: firstName.trim(),
+                last_name: lastName.trim(),
+                birthday: toIsoDate(dateOfBirth),
+                gender,
+            });
+
+            // Login isn't gated on email verification, so this logs the
+            // freshly-registered user straight in.
+            await login(username, password);
+
+            reset();
+            router.push("/(login-signup)/verify-mobile");
+        } catch (err) {
+            setFormError(err instanceof ApiError ? err.message : "Couldn't create your account. Check your connection and try again.");
+        } finally {
+            setSubmitting(false);
+        }
     }
 
     function formatDateOfBirth(text: string) {
@@ -318,8 +353,12 @@ function isValidMobileNumber(num: string) {
 
                         {formError ? <Text style={styles.formErrorText}>{formError}</Text> : null}
 
-                        <Pressable style={styles.loginButton} onPress={handleCreateAccount}>
-                            <Text style={styles.loginButtonText}>Next</Text>
+                        <Pressable
+                            style={[styles.loginButton, submitting ? styles.loginButtonDisabled : null]}
+                            onPress={handleCreateAccount}
+                            disabled={submitting}
+                        >
+                            <Text style={styles.loginButtonText}>{submitting ? "Creating account…" : "Next"}</Text>
                         </Pressable>
                     </ScrollView>
                 </TouchableWithoutFeedback>
@@ -413,6 +452,10 @@ scrollContent: {
     color: "white",
     fontFamily: Fonts.instrumentSerifRegular,
     fontSize: 24,
+  },
+
+  loginButtonDisabled: {
+    opacity: 0.6,
   },
 
 dropdownButton: {

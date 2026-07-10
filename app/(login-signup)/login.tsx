@@ -1,5 +1,6 @@
 // app/login.tsx
 import { Colors, Fonts, FontSizes } from "@/constants/theme";
+import { ApiError, login } from "@/lib/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -10,16 +11,12 @@ export default function Login() {
     const [password, setPassword] = useState("");
     const [usernameError, setUsernameError] = useState("");
     const [passwordError, setPasswordError] = useState("");
+    const [submitting, setSubmitting] = useState(false);
 
 
-    function handleContinue() {
+    async function handleContinue() {
         if (username.trim() === "") {
             setUsernameError("Please enter a username.");
-            return;
-        }
-
-        if (username.trim().toLowerCase() !== "riley") { // CONNECT TO DB EVENTUALLY
-            setUsernameError("That username does not exist.");
             return;
         }
 
@@ -28,12 +25,15 @@ export default function Login() {
             return;
         }
 
-        if (password !== "password"){ // CONNECT TO DB EVENTUALLY
-            setPasswordError("Password is incorrect.");
-            return;
+        setSubmitting(true);
+        try {
+            await login(username.trim(), password);
+            router.push("/(main-screens)/home");
+        } catch (err) {
+            setPasswordError(err instanceof ApiError ? err.message : "Couldn't reach the server. Check your connection and try again.");
+        } finally {
+            setSubmitting(false);
         }
-
-        router.push("/(main-screens)/home");
     }
 
   return (
@@ -71,8 +71,12 @@ export default function Login() {
 
         <Text style={styles.forgot}>Forgot password?</Text>
 
-        <Pressable style={styles.loginButton} onPress={handleContinue}>
-            <Text style={styles.loginButtonText}>Log in</Text>
+        <Pressable
+            style={[styles.loginButton, submitting ? styles.loginButtonDisabled : null]}
+            onPress={handleContinue}
+            disabled={submitting}
+        >
+            <Text style={styles.loginButtonText}>{submitting ? "Logging in…" : "Log in"}</Text>
         </Pressable>
 
     </LinearGradient>
@@ -154,6 +158,10 @@ const styles = StyleSheet.create({
     color: "white",
     fontFamily: Fonts.instrumentSerifRegular,
     fontSize: 24,
+  },
+
+  loginButtonDisabled: {
+    opacity: 0.6,
   },
 
   errorText: {

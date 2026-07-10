@@ -39,7 +39,7 @@ export default function Verify() {
         setCodeError("");
 
         successTimeoutRef.current = setTimeout(() => {
-            router.push("/(login-signup)/details");
+            router.push("/(login-signup)/create-account");
         }, 500);
     }
 

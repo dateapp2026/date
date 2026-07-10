@@ -1,4 +1,5 @@
 import { Colors, Fonts, FontSizes } from "@/constants/theme";
+import { useSignup } from "@/contexts/SignupContext";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -17,14 +18,20 @@ import {
 } from "react-native";
 
 export default function Index() {
+    const { setEmail: setSignupEmail } = useSignup();
     const [selectedUniversity, setSelectedUniversity] = useState("");
     const [showUniversityDropdown, setShowUniversityDropdown] = useState(false);
     const [email, setEmail] = useState("");
     const [showVerifyButton, setShowVerifyButton] = useState(false);
-    
+
     function handleSelectUniversity(university: string) {
         setSelectedUniversity(university);
         setShowUniversityDropdown(false);
+    }
+
+    function handleContinue() {
+        setSignupEmail(email.trim());
+        router.push("/(login-signup)/verify-uni-email");
     }
 
     return (
@@ -119,7 +126,7 @@ export default function Index() {
 
                                 <Pressable
                                     style={styles.loginButton}
-                                    onPress={() => router.push("/(login-signup)/verify-uni-email")}
+                                    onPress={handleContinue}
                                 >
                                     <Text style={styles.loginButtonText}>Next</Text>
                                 </Pressable>
