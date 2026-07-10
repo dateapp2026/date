@@ -4,11 +4,14 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"log"
 	"net/http"
 	"regexp"
 	"time"
 
+	"github.com/aprator/date/internal/email"
 	"github.com/aprator/date/internal/models"
+	"github.com/aws/aws-sdk-go-v2/service/sesv2"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -16,12 +19,21 @@ import (
 )
 
 type AuthHandler struct {
-	DB        *pgxpool.Pool
-	JWTSecret string
+	DB            *pgxpool.Pool
+	JWTSecret     string
+	SESClient     *sesv2.Client
+	SESFrom       string
+	PublicBaseURL string
 }
 
-func NewAuthHandler(db *pgxpool.Pool, jwtSecret string) *AuthHandler {
-	return &AuthHandler{DB: db, JWTSecret: jwtSecret}
+func NewAuthHandler(db *pgxpool.Pool, jwtSecret string, sesClient *sesv2.Client, sesFrom, publicBaseURL string) *AuthHandler {
+	return &AuthHandler{
+		DB:            db,
+		JWTSecret:     jwtSecret,
+		SESClient:     sesClient,
+		SESFrom:       sesFrom,
+		PublicBaseURL: publicBaseURL,
+	}
 }
 
 var usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]+$`)
@@ -89,13 +101,24 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	// TODO: send verification email with token
-	// For now, log the token so you can test manually
-	c.JSON(http.StatusCreated, gin.H{
-		"message":            "account created — check your email to verify",
-		"user":               user,
-		"verification_token": verificationToken,
-	})
+	sesConfigured := h.SESClient != nil && h.SESFrom != ""
+	if sesConfigured {
+		if err := email.SendVerificationEmail(context.Background(), h.SESClient, h.SESFrom, user.Email, verificationToken, h.PublicBaseURL); err != nil {
+			log.Printf("failed to send verification email to %s: %v", user.Email, err)
+		}
+	} else {
+		log.Printf("SES not configured — skipping verification email, token: %s", verificationToken)
+	}
+
+	response := gin.H{
+		"message": "account created — check your email to verify",
+		"user":    user,
+	}
+	if !sesConfigured {
+		// Dev convenience only: with no SES configured there's no other way to get the token.
+		response["verification_token"] = verificationToken
+	}
+	c.JSON(http.StatusCreated, response)
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -108,7 +131,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	var user models.User
 	err := h.DB.QueryRow(context.Background(),
 		`SELECT id, email, username, password_hash, first_name, last_name, birthday, gender, profile_picture_url, email_verified, created_at, updated_at
-		 FROM users WHERE email = $1`, req.Email,
+		 FROM users WHERE username = $1`, req.Username,
 	).Scan(&user.ID, &user.Email, &user.Username, &user.PasswordHash, &user.FirstName, &user.LastName, &user.Birthday, &user.Gender, &user.ProfilePictureURL, &user.EmailVerified, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {

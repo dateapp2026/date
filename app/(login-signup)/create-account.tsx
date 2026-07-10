@@ -1,4 +1,5 @@
 import { Colors, Fonts, FontSizes } from "@/constants/theme";
+import { useSignup } from "@/contexts/SignupContext";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useState } from "react";
@@ -15,7 +16,10 @@ import {
     View,
 } from "react-native";
 
+const usernameRegex = /^[a-zA-Z0-9_]+$/;
+
 export default function Login() {
+    const { setCredentials } = useSignup();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [confirmedPassword, setConfirmedPassword] = useState("");
@@ -30,13 +34,14 @@ export default function Login() {
             return;
         }
 
-        if (username.trim().toLowerCase() === "riley") {
-            setUsernameError("That username is already taken.");
+        if (!usernameRegex.test(username.trim())) {
+            setUsernameError("Username can only contain letters, numbers, and underscores — no spaces.");
             return;
         }
 
-        if (password === "") {
-            setPasswordError("Please enter a password.");
+        const passwordValidationError = validatePassword(password);
+        if (passwordValidationError) {
+            setPasswordError(passwordValidationError);
             return;
         }
 
@@ -50,6 +55,7 @@ export default function Login() {
             return;
         }
 
+        setCredentials(username.trim(), password);
         router.push("/(login-signup)/details");
     }
 
@@ -97,11 +103,7 @@ export default function Login() {
                     textContentType="username"
                     onChangeText={(text) => {
                         setUsername(text);
-                        if (text.trim().toLowerCase() === "riley") { // CONNECT TO DB EVENTUALLY
-                            setUsernameError("That username is already taken.");
-                        } else {
-                            setUsernameError("");
-                        }
+                        setUsernameError("");
                     }}
                 />
                 {usernameError ? <Text style={styles.errorText}>{usernameError}</Text> : null}
