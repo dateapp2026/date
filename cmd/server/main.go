@@ -8,6 +8,8 @@ import (
 	"github.com/aprator/date/internal/database"
 	"github.com/aprator/date/internal/email"
 	"github.com/aprator/date/internal/router"
+	"github.com/aprator/date/internal/storage"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2"
 	"github.com/joho/godotenv"
 )
@@ -32,7 +34,16 @@ func main() {
 		}
 	}
 
-	r := router.Setup(db, cfg, sesClient)
+	var s3Client *s3.Client
+	if cfg.S3BucketName != "" {
+		s3Client, err = storage.NewS3Client(context.Background(), cfg.AWSRegion)
+		if err != nil {
+			log.Printf("AWS not configured, photo uploads will be unavailable: %v", err)
+			s3Client = nil
+		}
+	}
+
+	r := router.Setup(db, cfg, sesClient, s3Client)
 
 	log.Printf("server starting on port %s", cfg.ServerPort)
 	if err := r.Run(":" + cfg.ServerPort); err != nil {

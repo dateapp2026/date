@@ -6,12 +6,14 @@ import (
 	"github.com/aprator/date/internal/config"
 	"github.com/aprator/date/internal/handlers"
 	"github.com/aprator/date/internal/middleware"
+	"github.com/aprator/date/internal/storage"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/sesv2"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func Setup(db *pgxpool.Pool, cfg config.Config, sesClient *sesv2.Client) *gin.Engine {
+func Setup(db *pgxpool.Pool, cfg config.Config, sesClient *sesv2.Client, s3Client *s3.Client) *gin.Engine {
 	r := gin.Default()
 	r.Use(corsMiddleware())
 
@@ -29,6 +31,19 @@ func Setup(db *pgxpool.Pool, cfg config.Config, sesClient *sesv2.Client) *gin.En
 	protected.Use(middleware.AuthRequired(cfg.JWTSecret))
 	{
 		protected.GET("/me", authHandler.GetMe)
+	}
+
+	if s3Client != nil {
+		photosHandler := handlers.NewPhotosHandler(db, s3Client, storage.NewPresignClient(s3Client), cfg.S3BucketName, cfg.AWSRegion)
+
+		photos := r.Group("/photos")
+		photos.Use(middleware.AuthRequired(cfg.JWTSecret))
+		{
+			photos.GET("", photosHandler.ListPhotos)
+			photos.POST("", photosHandler.CreatePhoto)
+			photos.POST("/presign-upload", photosHandler.PresignUpload)
+			photos.DELETE("/:id", photosHandler.DeletePhoto)
+		}
 	}
 
 	return r
