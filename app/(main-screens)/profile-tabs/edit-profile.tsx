@@ -1,9 +1,11 @@
 import { Colors, Fonts } from "@/constants/theme";
+import { deletePhoto, listPhotos, uploadPhoto } from "@/lib/photos";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+    ActivityIndicator,
     Alert,
     Image,
     Pressable,
@@ -17,7 +19,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const startingPhoto = require("@/assets/images/frat_boy_photo.jpeg");
 
-type PhotoSlot = string | null;
+type PhotoSlot = { id: string | null; uri: string; uploading: boolean } | null;
 
 export default function EditProfile() {
     const [mainPhoto, setMainPhoto] = useState<string | null>(null);
@@ -34,6 +36,24 @@ export default function EditProfile() {
         "Whats up Im Tyler and im looking for a date for formal next Thursday. I love country music and taking out the boat and drinking beer with th..."
     );
 
+    useEffect(() => {
+        listPhotos()
+            .then((serverPhotos) => {
+                setPhotos((currentPhotos) => {
+                    const updatedPhotos = [...currentPhotos];
+                    for (const photo of serverPhotos) {
+                        if (photo.position >= 0 && photo.position < updatedPhotos.length) {
+                            updatedPhotos[photo.position] = { id: photo.id, uri: photo.url, uploading: false };
+                        }
+                    }
+                    return updatedPhotos;
+                });
+            })
+            .catch(() => {
+                // Not logged in yet, or the photos API is unavailable — the grid just starts empty.
+            });
+    }, []);
+
     async function pickMainPhoto() {
         const imageUri = await pickImage();
 
@@ -43,31 +63,55 @@ export default function EditProfile() {
     }
 
     async function pickPhoto(index: number) {
-        const imageUri = await pickImage();
+        const asset = await pickImageAsset();
 
-        if (!imageUri) {
+        if (!asset) {
             return;
         }
 
         setPhotos((currentPhotos) => {
             const updatedPhotos = [...currentPhotos];
-            updatedPhotos[index] = imageUri;
+            updatedPhotos[index] = { id: null, uri: asset.uri, uploading: true };
             return updatedPhotos;
         });
+
+        try {
+            const photo = await uploadPhoto(asset.uri, asset.mimeType, index);
+            setPhotos((currentPhotos) => {
+                const updatedPhotos = [...currentPhotos];
+                updatedPhotos[index] = { id: photo.id, uri: photo.url, uploading: false };
+                return updatedPhotos;
+            });
+        } catch (error) {
+            setPhotos((currentPhotos) => {
+                const updatedPhotos = [...currentPhotos];
+                updatedPhotos[index] = null;
+                return updatedPhotos;
+            });
+            Alert.alert("Upload failed", error instanceof Error ? error.message : "Please try again.");
+        }
     }
 
     function removePhoto(index: number) {
+        const photo = photos[index];
+
         setPhotos((currentPhotos) => {
             const updatedPhotos = [...currentPhotos];
             updatedPhotos[index] = null;
             return updatedPhotos;
         });
+
+        if (photo?.id) {
+            deletePhoto(photo.id).catch(() => {
+                Alert.alert("Error", "Failed to delete photo. Please try again.");
+            });
+        }
     }
 
     function handleDone() {
-        const uploadedPhotos = photos.filter((photo) => photo !== null);
+        const hasPhoto = photos.some((photo) => photo !== null);
 
-        if (uploadedPhotos.length === 0) {
+        if (!hasPhoto) {
             Alert.alert("Add photos", "Please upload at least one profile photo.");
             return;
         }
@@ -156,9 +200,17 @@ export default function EditProfile() {
                                     <Pressable
                                         style={styles.photoSlot}
                                         onPress={() => pickPhoto(index)}
+                                        disabled={photo?.uploading}
                                     >
                                         {photo ? (
-                                            <Image source={{ uri: photo }} style={styles.photo} />
+                                            <>
+                                                <Image source={{ uri: photo.uri }} style={styles.photo} />
+                                                {photo.uploading && (
+                                                    <View style={styles.uploadingOverlay}>
+                                                        <ActivityIndicator color={Colors.white} />
+                                                    </View>
+                                                )}
+                                            </>
                                         ) : (
                                             <View style={styles.emptyPhotoSlot}>
                                                 <Ionicons name="add" size={42} color="#8A8A8A" />
@@ -167,7 +219,7 @@ export default function EditProfile() {
                                         )}
                                     </Pressable>
 
-                                    {photo && (
+                                    {photo && !photo.uploading && (
                                         <Pressable
                                             style={styles.removePhotoButton}
                                             onPress={() => removePhoto(index)}
@@ -214,7 +266,7 @@ export default function EditProfile() {
     );
 }
 
-async function pickImage() {
+async function pickImageAsset() {
     const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ["images"],
         allowsEditing: true,
@@ -225,7 +277,12 @@ async function pickImage() {
         return null;
     }
 
-    return result.assets[0].uri;
+    return result.assets[0];
+}
+
+async function pickImage() {
+    const asset = await pickImageAsset();
+    return asset?.uri ?? null;
 }
 
 const styles = StyleSheet.create({
@@ -399,6 +456,13 @@ const styles = StyleSheet.create({
     photo: {
         width: "100%",
         height: "100%",
+    },
+
+    uploadingOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: "rgba(0, 0, 0, 0.35)",
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     emptyPhotoSlot: {

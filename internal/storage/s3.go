@@ -3,11 +3,10 @@ package storage
 import (
 	"context"
 	"fmt"
-	"io"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 )
 
@@ -19,20 +18,40 @@ func NewS3Client(ctx context.Context, region string) (*s3.Client, error) {
 	return s3.NewFromConfig(cfg), nil
 }
 
-func UploadPhoto(ctx context.Context, client *s3.Client, bucket, key, contentType string, body io.Reader) (string, error) {
-	uploader := manager.NewUploader(client)
-	_, err := uploader.Upload(ctx, &s3.PutObjectInput{
+func NewPresignClient(client *s3.Client) *s3.PresignClient {
+	return s3.NewPresignClient(client)
+}
+
+// PresignPutObject returns a short-lived URL the client can PUT the photo
+// bytes to directly, bypassing our server for the upload itself.
+func PresignPutObject(ctx context.Context, presigner *s3.PresignClient, bucket, key, contentType string, expires time.Duration) (string, error) {
+	req, err := presigner.PresignPutObject(ctx, &s3.PutObjectInput{
 		Bucket:      aws.String(bucket),
 		Key:         aws.String(key),
-		Body:        body,
 		ContentType: aws.String(contentType),
-	})
+	}, s3.WithPresignExpires(expires))
 	if err != nil {
-		return "", fmt.Errorf("unable to upload photo to s3: %w", err)
+		return "", fmt.Errorf("unable to presign upload url: %w", err)
 	}
+	return req.URL, nil
+}
 
-	url := fmt.Sprintf("https://%s.s3.amazonaws.com/%s", bucket, key)
-	return url, nil
+// PresignGetObject returns a short-lived URL for viewing a private object.
+func PresignGetObject(ctx context.Context, presigner *s3.PresignClient, bucket, key string, expires time.Duration) (string, error) {
+	req, err := presigner.PresignGetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(bucket),
+		Key:    aws.String(key),
+	}, s3.WithPresignExpires(expires))
+	if err != nil {
+		return "", fmt.Errorf("unable to presign view url: %w", err)
+	}
+	return req.URL, nil
+}
+
+// PublicObjectURL builds the permanent (non-expiring) URL for an object,
+// for use when the bucket serves photos with public-read access.
+func PublicObjectURL(bucket, region, key string) string {
+	return fmt.Sprintf("https://%s.s3.%s.amazonaws.com/%s", bucket, region, key)
 }
 
 func DeleteObject(ctx context.Context, client *s3.Client, bucket, key string) error {
