@@ -44,6 +44,16 @@ func Setup(db *pgxpool.Pool, cfg config.Config, sesClient *sesv2.Client, s3Clien
 			photos.POST("/presign-upload", photosHandler.PresignUpload)
 			photos.DELETE("/:id", photosHandler.DeletePhoto)
 		}
+
+		discoverHandler := handlers.NewDiscoverHandler(db, storage.NewPresignClient(s3Client), cfg.S3BucketName, cfg.AWSRegion)
+
+		discover := r.Group("/discover")
+		discover.Use(middleware.AuthRequired(cfg.JWTSecret))
+		discover.GET("", discoverHandler.ListCandidates)
+
+		swipes := r.Group("/swipes")
+		swipes.Use(middleware.AuthRequired(cfg.JWTSecret))
+		swipes.POST("", discoverHandler.CreateSwipe)
 	}
 
 	return r
