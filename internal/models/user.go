@@ -51,3 +51,16 @@ type Photo struct {
 type UpdateBioRequest struct {
 	Bio string `json:"bio" binding:"max=500"`
 }
+
+type DiscoverCandidate struct {
+	ID        string  `json:"id"`
+	FirstName string  `json:"first_name"`
+	Age       int     `json:"age"`
+	Bio       *string `json:"bio"`
+	Photos    []Photo `json:"photos"`
+}
+
+type SwipeRequest struct {
+	SwipeeID string `json:"swipee_id" binding:"required"`
+	Liked    bool   `json:"liked"`
+}

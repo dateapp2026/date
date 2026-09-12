@@ -56,11 +56,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	age := time.Now().Year() - birthday.Year()
-	if time.Now().YearDay() < birthday.YearDay() {
-		age--
-	}
-	if age < 18 {
+	if ageFromBirthday(birthday) < 18 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "must be at least 18 years old"})
 		return
 	}
@@ -235,6 +231,14 @@ func (h *AuthHandler) generateJWT(userID string) (string, error) {
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(h.JWTSecret))
+}
+
+func ageFromBirthday(birthday time.Time) int {
+	age := time.Now().Year() - birthday.Year()
+	if time.Now().YearDay() < birthday.YearDay() {
+		age--
+	}
+	return age
 }
 
 func generateToken() (string, error) {
